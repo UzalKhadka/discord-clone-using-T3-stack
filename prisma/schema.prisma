@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
+// npx prisma generate // to generate the prisma client after making changes to the schema
+// npx prisma db push // to push the changes to the database
+// npx prisma studio // to open the prisma studio
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Profile {
+  id String @id @default(uuid())
+  userId String @unique
+  name String
+  imageUrl String @db.Text // dn.Text is for long text
+  email String @db.Text
+
+  servers Server[] // a back reference to the server model
+  members Member[] // a back reference to the member model
+  channels Channel[] // a back reference to the channel model
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Server {
+  id String @id @default(uuid())
+  name String
+  imageUrl String @db.Text
+  inviteCode String @db.Text
+
+  profileId String
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  members Member[] // a back reference to the member model
+  channels Channel[] // a back reference to the channel model
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+}
+
+enum MemberRole {
+  ADMIN
+  MODERATOR
+  GUEST
+}
+
+model Member {
+  id String @id @default(uuid())
+  role MemberRole @default(GUEST)
+
+  profileId String
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  serverId String
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([serverId])
+}
+
+enum ChannelType {
+  TEXT
+  AUDIO
+  VIDEO
+}
+
+model Channel {
+  id String @id @default(uuid())
+  name String
+  type ChannelType @default(TEXT)
+
+  profileId String
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  serverId String
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([serverId])
+}
